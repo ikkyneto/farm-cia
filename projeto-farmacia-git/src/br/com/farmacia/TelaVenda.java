@@ -120,7 +120,7 @@ public class TelaVenda extends JFrame {
 		
 		JButton btnNewButton = new JButton("Confirmar Venda");
 		btnNewButton.setBounds(10, 297, 128, 33);
-		contentPane.add(btnNewButton);
+		contentPane.add(btnNewButton); 
 		
 		JLabel lblNewLabel_2_1 = new JLabel("Vendedor:");
 		lblNewLabel_2_1.setBounds(10, 84, 74, 14);
@@ -144,6 +144,4 @@ public class TelaVenda extends JFrame {
 		contentPane.add(textField_6);
 		textField_6.setColumns(10);
 	}
-}
-
 }
