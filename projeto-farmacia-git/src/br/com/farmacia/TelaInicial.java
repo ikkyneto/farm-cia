@@ -46,6 +46,9 @@ public class TelaInicial extends JFrame {
 		
 		JMenuItem mntmNewMenuItem = new JMenuItem("Cadastro");
 		mnNewMenu.add(mntmNewMenuItem);
+		
+		JMenuItem mntmNewMenuItem_1 = new JMenuItem("Vender");
+		mnNewMenu.add(mntmNewMenuItem_1);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		
@@ -55,6 +58,16 @@ public class TelaInicial extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				TelaCadastro cadPes = new TelaCadastro();
 				cadPes.setVisible(true);
+				
+			}
+		});
+		
+		mntmNewMenuItem_1.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				TelaVenda newVenda = new TelaVenda();
+				newVenda.setVisible(true);
 				
 			}
 		});

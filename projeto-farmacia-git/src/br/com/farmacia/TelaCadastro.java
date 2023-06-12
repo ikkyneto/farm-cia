@@ -1,10 +1,18 @@
 package br.com.farmacia;
 
 import java.awt.EventQueue;
+import javax.swing.JComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -57,6 +65,7 @@ public class TelaCadastro extends JFrame {
 	 * Create the frame.
 	 */
 	public TelaCadastro() {
+		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 663, 446);
 		contentPane = new JPanel();
@@ -152,9 +161,9 @@ public class TelaCadastro extends JFrame {
 		        String sql = "INSERT INTO pessoas(Nome, CPF, RG, Endereco, CEP, Email, Data_de_Nascimento, ORG_Emissor) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 		        ConectaBanco factory = new ConectaBanco();
 		        try (Connection c = factory.obtemConexao()){
-		            PreparedStatement ps = c.prepareStatement(sql);
+		            PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 		            ps.setString(1, textField_4.getText());
-		            ps.setFloat(2, Float.parseFloat(textField.getText()));            
+		            ps.setString(2, textField.getText());            
 		            ps.setInt(3, Integer.parseInt(textField_1.getText()));
 		            ps.setString(4, textField_5.getText());
 		            ps.setInt(5, Integer.parseInt(textField_2.getText()));
@@ -162,8 +171,54 @@ public class TelaCadastro extends JFrame {
 		            ps.setInt(7, Integer.parseInt(textField_3.getText()));
 		            ps.setString(8, textField_7.getText());
 		            ps.execute();
-		            JOptionPane.showMessageDialog(null, "Cliente cadastrado com sucesso !!!");
 		            
+		            int id = 0;
+		            ResultSet keys = ps.getGeneratedKeys();
+		            if(keys.next()) {
+		            	id = keys.getInt(1);
+		            }
+		            
+		            String selectedItem = (String) comboBox.getSelectedItem();
+		            if (selectedItem.equals("Cliente")) {
+		            	 String inserir_cliente = "INSERT INTO cliente (ID_Cliente) VALUES (?)";
+		            	 String atualizar_dado_pessoas_fk_cliente = "UPDATE pessoas SET Cliente_ID_Cliente = ? WHERE ID_Pessoas = ?";
+		            	 try (c){
+		            		 PreparedStatement ps_cl = c.prepareStatement(inserir_cliente);
+		            		
+		            		 ps_cl.setInt(1, id);
+		            		 ps_cl.execute();
+		            		 
+		            		 PreparedStatement ps_atl = c.prepareStatement(atualizar_dado_pessoas_fk_cliente);
+		            		 
+		            		 ps_atl.setInt(1, id);
+		            		 ps_atl.setInt(2, id);
+		            		 ps_atl.execute();
+		            		 
+		            	 }
+		            }
+		            
+		            else if (selectedItem.equals("Funcionario")) {
+		            	 String inserir_func = "INSERT INTO funcionario (ID_Funcionario, Salario, Carteira_de_Trabalho, Reservista) VALUES (?, ?, ?, ?)";
+		            	 String atualizar_dado_pessoas_fk_func = "UPDATE pessoas SET Funcionario_ID_Funcionario = ? WHERE ID_Pessoas = ?";
+		            	 try (c){
+		            		 PreparedStatement ps_cl = c.prepareStatement(inserir_func);
+		            		
+		            		 ps_cl.setInt(1, id);
+		            		 ps_cl.setInt(2, Integer.parseInt(textField_8.getText()));
+		            		 ps_cl.setInt(3, Integer.parseInt(textField_9.getText()));
+		            		 ps_cl.setInt(4, Integer.parseInt(textField_10.getText()));
+		            		 ps_cl.execute();
+		            		 
+		            		 PreparedStatement ps_atl = c.prepareStatement(atualizar_dado_pessoas_fk_func);
+		            		 
+		            		 ps_atl.setInt(1, id);
+		            		 ps_atl.setInt(2, id);
+		            		 ps_atl.execute();
+		            		 
+		            	 }
+		            }
+		            
+		            JOptionPane.showMessageDialog(null, "Cadastrado com sucesso !!!"); // evento final
 		        }
 		        catch (Exception w){
 		            w.printStackTrace();//retorna o erro
@@ -209,5 +264,47 @@ public class TelaCadastro extends JFrame {
 		textField_10.setColumns(10);
 		textField_10.setBounds(91, 340, 155, 20);
 		contentPane.add(textField_10);
+		
+		JComponent[] dados_cliente = { lblNewLabel_1, textField, lblNewLabel_1_1, textField_1, lblNewLabel_1_1_1, textField_2, lblNewLabel_1_1_1_1, textField_3, textField_4, textField_5, textField_6, textField_7, lblNewLabel_1_2, lblNewLabel_1_1_1_2, lblNewLabel_1_1_1_2_1, lblNewLabel_1_1_1_2_1_1};
+		JComponent[] dados_funcionario = { lblNewLabel_1_1_1_1_1, textField_8, lblNewLabel_1_1_1_1_1_1, textField_9, lblNewLabel_1_1_1_1_1_1_1, textField_10 };
+		JComponent[] botao = { btnNewButton };
+		
+		List<JComponent> componentes = new ArrayList<>();
+		componentes.addAll(Arrays.asList(dados_cliente));
+		componentes.addAll(Arrays.asList(dados_funcionario));
+		componentes.addAll(Arrays.asList(botao));
+		
+		comboBox.setSelectedItem("Selecionar"); // Define o valor padrão para "Selecionar"
+
+		for (JComponent component : componentes) {
+		    component.setVisible(false); // Oculta os componentes inicialmente
+		}
+		
+		comboBox.addItemListener(new ItemListener() {
+		    public void itemStateChanged(ItemEvent event) {
+		        if (event.getStateChange() == ItemEvent.SELECTED) {
+		            String selectedItem = (String) comboBox.getSelectedItem();
+		            if (selectedItem.equals("Selecionar")) {
+		                for (JComponent component : componentes) {
+		                    component.setVisible(false);
+		                }
+		            } else if (selectedItem.equals("Cliente")) {
+		                for (JComponent component : dados_cliente) {
+		                    component.setVisible(true);
+		                }
+		                for (JComponent component : dados_funcionario) {
+		                    component.setVisible(false);
+		                }
+		                for (JComponent component : botao) {
+		                    component.setVisible(true);
+		                }
+		            } else if (selectedItem.equals("Funcionario")) {
+		                for (JComponent component : componentes) {
+		                    component.setVisible(true);
+		                }
+		            }
+		        }
+		    }
+		});
 	}
 }
