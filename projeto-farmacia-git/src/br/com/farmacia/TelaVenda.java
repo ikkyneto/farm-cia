@@ -11,7 +11,8 @@
 	import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
-	import javax.swing.JButton;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
 	import javax.swing.border.CompoundBorder;
 	import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
@@ -46,6 +47,7 @@ import javax.swing.JScrollBar;
 		private JTextField textField_5;
 		private JTextField textField_6;
 		private JTextField textField_7;
+	    private JList<String> list;
 	
 		/**
 		 * Launch the application.
@@ -109,6 +111,18 @@ import javax.swing.JScrollBar;
 			contentPane.add(textField_2);
 			textField_2.setColumns(10);
 			
+			textField_2.addFocusListener(new FocusListener() {
+		        @Override
+		        public void focusGained(FocusEvent e) {
+		            // Não faz nada quando o campo ganha foco
+		        }
+
+		        @Override
+		        public void focusLost(FocusEvent e) {
+		            buscarProduto();
+		        }
+		    });
+			
 			JLabel lblNewLabel_4 = new JLabel("Quantidade de itens:");
 			lblNewLabel_4.setBounds(10, 168, 101, 14);
 			contentPane.add(lblNewLabel_4);
@@ -123,14 +137,18 @@ import javax.swing.JScrollBar;
 			contentPane.add(lblNewLabel_5);
 			
 			textField_4 = new JTextField();
+			textField_4.setEditable(false);
 			textField_4.setColumns(10);
 			textField_4.setBounds(121, 190, 46, 20);
 			contentPane.add(textField_4);
 			
-			JList list = new JList();
-			list.setBorder(new CompoundBorder(new LineBorder(new Color(192, 192, 192)), null));
-			list.setBounds(279, 166, 194, 133);
-			contentPane.add(list);
+			list = new JList<>(new DefaultListModel<>());
+			DefaultListModel<String> listModel = new DefaultListModel<>();
+		    list.setModel(listModel);
+		    list.setBorder(new CompoundBorder(new LineBorder(new Color(192, 192, 192)), null));
+		    list.setBounds(279, 166, 194, 133);
+		    contentPane.add(list);
+
 			
 			JLabel lblNewLabel_6 = new JLabel("Lista de Itens");
 			lblNewLabel_6.setBounds(343, 143, 86, 14);
@@ -143,7 +161,7 @@ import javax.swing.JScrollBar;
 			btnNewButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					
-					
+					//finalizarVenda();
 					
 				}
 			});
@@ -197,10 +215,11 @@ import javax.swing.JScrollBar;
 			textField_6.setColumns(10);
 			
 			JButton btnAdicionarNaLista = new JButton("Adicionar na Lista");
-			btnAdicionarNaLista.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-				}
-			});
+		    btnAdicionarNaLista.addActionListener(new ActionListener() {
+		        public void actionPerformed(ActionEvent e) {
+		            adicionarItemNaLista();
+		        }
+		    });
 			btnAdicionarNaLista.setBounds(10, 253, 128, 33);
 			contentPane.add(btnAdicionarNaLista);
 			
@@ -209,9 +228,68 @@ import javax.swing.JScrollBar;
 			contentPane.add(lblNewLabel_5_1);
 			
 			textField_7 = new JTextField();
+			textField_7.setEditable(false);
 			textField_7.setColumns(10);
 			textField_7.setBounds(121, 221, 46, 20);
 			contentPane.add(textField_7);
+		}
+		
+		public void adicionarItemNaLista() {
+		    String codigoItem = textField_2.getText();
+		    String quantidade = textField_3.getText();
+		    String valorUnitario = textField_4.getText();
+
+		    // Verifica se os campos estão preenchidos
+		    if (codigoItem.isEmpty() || quantidade.isEmpty() || valorUnitario.isEmpty()) {
+		        JOptionPane.showMessageDialog(this, "Preencha todos os campos");
+		        return;
+		    }
+
+		    // Obtém o nome do item a partir do banco de dados
+		    String nomeItem = buscarNomeItem(codigoItem);
+
+		    // Verifica se o nome do item foi encontrado no banco de dados
+		    if (nomeItem == null) {
+		        JOptionPane.showMessageDialog(this, "Item não encontrado");
+		        return;
+		    }
+
+		    // Calcule o valor final do item (quantidade * valor unitário)
+		    double valorFinal = Double.parseDouble(quantidade) * Double.parseDouble(valorUnitario);
+
+		    // Adiciona o item à lista
+		    DefaultListModel<String> model = (DefaultListModel<String>) list.getModel();
+		    model.addElement(codigoItem + " | " + (nomeItem != null ? nomeItem : "Nome não encontrado") + " | " + quantidade + " | " + valorFinal);
+
+		    // Limpa os campos após adicionar o item na lista
+		    textField_2.setText("");
+		    textField_3.setText("");
+		    textField_4.setText("");
+		    textField_7.setText("");
+
+		    JOptionPane.showMessageDialog(this, "Item adicionado à lista");
+		}
+
+		private String buscarNomeItem(String codigoItem) {
+		    String nomeItem = null;
+
+		    // Consulta o banco de dados para obter o nome do item com base no código do item (Código de Barras)
+		    String query = "SELECT Principio_Ativo FROM produtos WHERE Codigo_de_Barras = ?";
+
+		    ConectaBanco factory = new ConectaBanco();
+		    try (Connection c = factory.obtemConexao();
+		         PreparedStatement ps = c.prepareStatement(query)) {
+		        ps.setString(1, codigoItem);
+		        ResultSet resultSet = ps.executeQuery();
+
+		        if (resultSet.next()) {
+		            nomeItem = resultSet.getString("Principio_Ativo");
+		        }
+		    } catch (SQLException e) {
+		        e.printStackTrace();
+		    }
+
+		    return nomeItem;
 		}
 		
 		public void buscarNomeVendedor() {
@@ -259,4 +337,35 @@ import javax.swing.JScrollBar;
 		        JOptionPane.showMessageDialog(this, "Erro ao buscar cliente");
 		    }
 		}
+		
+		public void buscarProduto() {
+		    String idProduto = textField_2.getText();
+		    String query = "SELECT p.Valor, e.Quantidade " +
+		               "FROM produtos p " +
+		               "JOIN estoque e ON p.Estoque_ID_Estoque = e.ID_Estoque " +
+		               "WHERE p.Codigo_de_Barras = ?";
+
+		    ConectaBanco factory = new ConectaBanco();
+		    try (Connection c = factory.obtemConexao();
+		         PreparedStatement ps = c.prepareStatement(query)) {
+		        ps.setString(1, idProduto);
+		        ResultSet resultSet = ps.executeQuery();
+
+		        if (resultSet.next()) {
+		            double valor = resultSet.getDouble("Valor");
+		            int quantidade = resultSet.getInt("Quantidade");
+
+		            textField_4.setText(String.valueOf(valor));
+		            textField_7.setText(String.valueOf(quantidade));
+		        } else {
+		            textField_4.setText("");
+		            textField_7.setText("");
+		            JOptionPane.showMessageDialog(this, "Produto não encontrado");
+		        }
+		    } catch (SQLException e) {
+		        e.printStackTrace();
+		        JOptionPane.showMessageDialog(this, "Erro ao buscar produto");
+		    }
+		}
+		
 	}
